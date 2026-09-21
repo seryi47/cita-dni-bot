@@ -13,7 +13,7 @@ on:
     - cron: "*/5 * * * *"   # respaldo/relevo (el mínimo que permite GitHub)
   workflow_dispatch: {}
 
-# contents: commitear avisados.json de vuelta (para no repetir avisos entre relevos).
+# contents: commitear avisados.json/resumen.json de vuelta (para no repetir avisos ni resúmenes entre relevos).
 # actions:  para que /parar pueda desactivar este workflow y el cron no lo relance.
 permissions:
   contents: write
@@ -50,7 +50,8 @@ jobs:
           DNI_NUM_SOPORTE: ${{ secrets.DNI_NUM_SOPORTE }}
           DNI_ES_MODELO_4_0: "false"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          POLL_INTERVAL_MS: "900000"    # 15 min entre comprobaciones de citas (más suave con el sitio)
-          MAX_RUNTIME_SECONDS: "20000"  # ~5h33m; luego releva el siguiente run
-          GIT_COMMIT_BACK: "1"          # guarda avisados.json de vuelta en el repo
+          POLL_INTERVAL_MS: "900000"     # 15 min entre comprobaciones de citas (más suave con el sitio)
+          RESUMEN_INTERVAL_MS: "28800000" # 8h: resumen de todos los huecos vigentes, no solo los nuevos
+          MAX_RUNTIME_SECONDS: "20000"   # ~5h33m; luego releva el siguiente run
+          GIT_COMMIT_BACK: "1"           # guarda avisados.json/resumen.json de vuelta en el repo
         run: node poll.js --loop
