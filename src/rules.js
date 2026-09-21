@@ -25,6 +25,9 @@ const EXCLUSION_FIN = '2026-10-01';
 const EXCEPCION_FECHA = '2026-10-01';
 const EXCEPCION_HORA_MINIMA = '14:00'; // "por la tarde"
 
+// Límite superior: no interesan citas más allá de esta fecha (inclusive).
+const FECHA_LIMITE = '2026-10-07';
+
 // Umbral general de "mediodía" para la preferencia blanda por defecto.
 const MEDIODIA_MINUTOS = toMinutos('12:30');
 
@@ -52,6 +55,10 @@ function diaSemana(fechaISO) {
  * Devuelve { ok: boolean, motivo?: string }
  */
 function cumpleReglas(lugar, fechaISO, horaHHMM) {
+  if (fechaISO > FECHA_LIMITE) {
+    return { ok: false, motivo: `después del límite (${FECHA_LIMITE})` };
+  }
+
   if (fechaExcluida(fechaISO, horaHHMM)) {
     return { ok: false, motivo: 'dentro del rango excluido 28-sep a 1-oct (salvo tarde del 1-oct)' };
   }
