@@ -50,7 +50,7 @@ jobs:
           DNI_NUM_SOPORTE: ${{ secrets.DNI_NUM_SOPORTE }}
           DNI_ES_MODELO_4_0: "false"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          POLL_INTERVAL_MS: "300000"    # 5 min entre comprobaciones de citas
+          POLL_INTERVAL_MS: "900000"    # 15 min entre comprobaciones de citas (más suave con el sitio)
           MAX_RUNTIME_SECONDS: "20000"  # ~5h33m; luego releva el siguiente run
           GIT_COMMIT_BACK: "1"          # guarda avisados.json de vuelta en el repo
         run: node poll.js --loop
