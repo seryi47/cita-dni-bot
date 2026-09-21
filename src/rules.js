@@ -111,4 +111,5 @@ module.exports = {
   cumpleReglas,
   rankScore,
   fechaExcluida,
+  diaSemana,
 };

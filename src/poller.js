@@ -2,11 +2,11 @@
 
 const { fetchResuelto } = require('./navegacion');
 const { parseCalendario } = require('./parser-calendario');
-const { cumpleReglas, rankScore } = require('./rules');
+const { cumpleReglas, rankScore, diaSemana } = require('./rules');
 const { OFICINAS } = require('./oficinas');
 
 const BASE = 'https://www.citapreviadnie.es/citaPreviaDni/';
-const MAX_DIAS_EXTRA_POR_OFICINA = 3; // + el día que ya sale "gratis" al entrar = 4 días revisados
+const MAX_DIAS_EXTRA_POR_OFICINA = 4; // + el día que ya sale "gratis" al entrar
 const PAUSA_ENTRE_PETICIONES_MS = 5000;
 
 function sleep(ms) {
@@ -16,6 +16,25 @@ function sleep(ms) {
 function fechaAISO(ddmmyyyy) {
   const [d, m, y] = ddmmyyyy.split('/');
   return `${y}-${m}-${d}`;
+}
+
+/**
+ * Elige qué días "extra" merece la pena consultar (aparte del que ya sale
+ * gratis al entrar), sin desperdiciar el cupo en días que las reglas van a
+ * rechazar seguro. En Albacete (que ahora solo vale en lunes/viernes) eso
+ * significa priorizar esos días de la semana aunque no sean los más
+ * próximos cronológicamente; en el resto de sitios (cualquier día vale)
+ * simplemente coge los más próximos.
+ */
+function elegirDiasExtra(lugar, dias) {
+  if (lugar.toLowerCase() === 'albacete') {
+    const relevantes = dias.filter((d) => {
+      const dow = diaSemana(fechaAISO(d.fecha));
+      return dow === 1 || dow === 5; // lunes o viernes
+    });
+    return relevantes.slice(0, MAX_DIAS_EXTRA_POR_OFICINA);
+  }
+  return dias.slice(0, MAX_DIAS_EXTRA_POR_OFICINA);
 }
 
 // La sesión ha caducado si en vez del calendario nos devuelve el formulario de login.
@@ -64,9 +83,8 @@ async function revisarOficina(fetchS, oficina) {
     encontrados.push(...evaluarHoras(oficina.lugar, cal.horas));
   }
 
-  const diasExtra = cal.dias
-    .filter((d) => !cal.diaActual || d.fecha !== cal.diaActual.fecha)
-    .slice(0, MAX_DIAS_EXTRA_POR_OFICINA);
+  const candidatos = cal.dias.filter((d) => !cal.diaActual || d.fecha !== cal.diaActual.fecha);
+  const diasExtra = elegirDiasExtra(oficina.lugar, candidatos);
 
   for (const dia of diasExtra) {
     await sleep(PAUSA_ENTRE_PETICIONES_MS);
