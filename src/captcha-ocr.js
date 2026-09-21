@@ -57,8 +57,10 @@ function loadReferencia() {
 }
 
 function guardarReferencia(referencia) {
-  // El .dilatado es derivado (se recalcula al cargar) y no se persiste: solo label+bitmap en disco.
-  const soloDatos = referencia.map((r) => ({ label: r.label, bitmap: r.bitmap }));
+  // El .dilatado es derivado (se recalcula al cargar) y no se persiste. "instancia" si
+  // existe SÍ se conserva (la usa validate.js para no hacer trampa con las rotaciones
+  // sintéticas al medir precisión) — perderla no rompe el bot, pero sí las métricas.
+  const soloDatos = referencia.map((r) => ({ label: r.label, bitmap: r.bitmap, instancia: r.instancia }));
   fs.writeFileSync(REF_PATH, JSON.stringify({ width: CANVAS_W, height: CANVAS_H, referencia: soloDatos }));
   refCache = referencia;
 }
