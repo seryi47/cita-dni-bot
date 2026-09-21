@@ -1,0 +1,56 @@
+name: Vigilar citas DNI
+
+# Igual que BotTrading/TrenBot: un job LARGO que sondea en bucle y se releva
+# solo, gratis en GitHub Actions (requiere repo público para minutos ilimitados).
+#
+# Cómo funciona: cada ejecución es un job LARGO que sondea en bucle cada
+# POLL_INTERVAL_MS durante ~5h33m y luego termina. El cron de respaldo (cada
+# 5 min) + la regla de concurrencia hacen que el siguiente job arranque en
+# cuanto acabe el anterior, quedando casi sin huecos.
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # respaldo/relevo (el mínimo que permite GitHub)
+  workflow_dispatch: {}
+
+# contents: commitear avisados.json de vuelta (para no repetir avisos entre relevos).
+# actions:  para que /parar pueda desactivar este workflow y el cron no lo relance.
+permissions:
+  contents: write
+  actions: write
+
+# Solo un job a la vez; el nuevo espera (pending) a que termine el que corre.
+concurrency:
+  group: vigilar-loop
+  cancel-in-progress: false
+
+jobs:
+  loop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340    # corta limpio antes del límite duro de 6h de GitHub
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Vigilar en bucle
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DNI_NUM_DOCUMENTO: ${{ secrets.DNI_NUM_DOCUMENTO }}
+          DNI_LETRA_DOCUMENTO: ${{ secrets.DNI_LETRA_DOCUMENTO }}
+          DNI_COD_EQUIPO: ${{ secrets.DNI_COD_EQUIPO }}
+          DNI_FECHA_VALIDEZ: ${{ secrets.DNI_FECHA_VALIDEZ }}
+          DNI_NUM_SOPORTE: ${{ secrets.DNI_NUM_SOPORTE }}
+          DNI_ES_MODELO_4_0: "false"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          POLL_INTERVAL_MS: "300000"    # 5 min entre comprobaciones de citas
+          MAX_RUNTIME_SECONDS: "20000"  # ~5h33m; luego releva el siguiente run
+          GIT_COMMIT_BACK: "1"          # guarda avisados.json de vuelta en el repo
+        run: node poll.js --loop
